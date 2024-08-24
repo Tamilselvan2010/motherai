@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mother AI</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+  <h1>Mother AI</h1>
+  <button id="startBtn">Start Recognition</button>
+  <button id="stopBtn">Stop Recognition</button>
+  <div id="conversation"></div>
+
+  <!-- Import the Google Generative AI library -->
+  <script type="importmap">
+        {
+          "imports": {
+            "@google/generative-ai": "https://esm.run/@google/generative-ai"
+          }
+        }
+    </script>
+
+  <script type="module">
+    import {GoogleGenerativeAI} from "@google/generative-ai";
+
+    const API_KEY = "AIzaSyDxiYL_b2ujeSjeY3uJEY46Eq18_vkOK7w";
+    const genAI = new GoogleGenerativeAI(API_KEY);
+    const model = genAI.getGenerativeModel({model: "gemini-1.5-flash"});
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SpeechRecognition) {
+      const recognition = new SpeechRecognition();
+      recognition.lang = 'en-GB';
+      recognition.continuous = true;
+      recognition.interimResults = true;
+
+      const startBtn = document.getElementById('startBtn');
+      const stopBtn = document.getElementById('stopBtn');
+      const conversation = document.getElementById('conversation');
+
+      let finalTranscript = '';
+      let typingTimer;
+      const typingDelay = 3000; // 3 seconds delay to consider it as final input
+
+      startBtn.addEventListener('click', () => {
+        recognition.start();
+        console.log('Recognition started');
+      });
+
+      stopBtn.addEventListener('click', () => {
+        recognition.stop();
+        console.log('Recognition stopped manually');
+      });
+
+      recognition.onresult = (event) => {
+        finalTranscript = ''; // Reset finalTranscript when new results come in
+        clearTimeout(typingTimer); // Clear any previous timer
+
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          if (event.results[i].isFinal) {
+            finalTranscript += event.results[i][0].transcript;
+          }
+        }
+
+        typingTimer = setTimeout(async () => {
+          if (finalTranscript) {
+            updateConversation('user', finalTranscript);
+            try {
+              const result = await model.generateContent(finalTranscript);
+              const response = await result.response;
+              const aiText = await response.text();
+              updateConversation('ai', aiText);
+              speakText(aiText);
+            } catch (error) {
+              console.error("Error generating AI response:", error);
+              updateConversation('ai', "Sorry, there was an error generating the AI response.");
+            }
+            finalTranscript = ''; // Clear after processing
+          }
+        }, typingDelay);
+      };
+
+      recognition.onend = () => {
+        console.log('Recognition ended');
+        // Optionally restart recognition if needed
+        // recognition.start();
+      };
+
+      recognition.onerror = (event) => {
+        console.error('Recognition error:', event.error);
+      };
+
+      function updateConversation(sender, message) {
+        const messageElement = document.createElement('div');
+        messageElement.className = message ${sender};
+        messageElement.textContent = ${sender === 'user' ? 'You' : 'AI'}: ${message};
+        conversation.appendChild(messageElement);
+        conversation.scrollTop = conversation.scrollHeight; // Scroll to the bottom
+      }
+
+      function speakText(text) {
+        const synth = window.speechSynthesis;
+        let voices = [];
+        const voicesLoadPromise = new Promise((resolve) => {
+          speechSynthesis.onvoiceschanged = () => {
+            voices = speechSynthesis.getVoices();
+            resolve();
+          };
+        });
+
+        voicesLoadPromise.then(() => {
+          // Attempt to find a female voice
+          const femaleVoice = voices.find(voice => voice.name.includes('Female') || voice.name.includes('Samantha') || voice.name.includes('Google UK English Female'));
+
+          const msg = new SpeechSynthesisUtterance(text);
+          msg.voice = femaleVoice || null;
+          msg.lang = 'en-IN';
+          msg.pitch = 0.8;
+          msg.rate = 0.9;
+          msg.volume = 1.0;
+          synth.speak(msg);
+        });
+      }
+    } else {
+      alert('Speech recognition not supported in this browser.');
+    }
+  </script>
+</body>
+
+</html>
