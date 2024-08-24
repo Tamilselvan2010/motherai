@@ -16,19 +16,19 @@
 
   <!-- Import the Google Generative AI library -->
   <script type="importmap">
-        {
-          "imports": {
-            "@google/generative-ai": "https://esm.run/@google/generative-ai"
-          }
-        }
-    </script>
+    {
+      "imports": {
+        "@google/generative-ai": "https://esm.run/@google/generative-ai"
+      }
+    }
+  </script>
 
   <script type="module">
-    import {GoogleGenerativeAI} from "@google/generative-ai";
+    import { GoogleGenerativeAI } from "@google/generative-ai";
 
     const API_KEY = "AIzaSyDxiYL_b2ujeSjeY3uJEY46Eq18_vkOK7w";
     const genAI = new GoogleGenerativeAI(API_KEY);
-    const model = genAI.getGenerativeModel({model: "gemini-1.5-flash"});
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (SpeechRecognition) {
@@ -95,8 +95,8 @@
 
       function updateConversation(sender, message) {
         const messageElement = document.createElement('div');
-        messageElement.className = message ${sender};
-        messageElement.textContent = ${sender === 'user' ? 'You' : 'AI'}: ${message};
+        messageElement.className = `message ${sender}`;
+        messageElement.textContent = `${sender === 'user' ? 'You' : 'AI'}: ${message}`;
         conversation.appendChild(messageElement);
         conversation.scrollTop = conversation.scrollHeight; // Scroll to the bottom
       }
